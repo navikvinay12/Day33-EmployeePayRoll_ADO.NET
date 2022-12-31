@@ -15,7 +15,6 @@ namespace EmployeePayRoll_ADO.NET
     {
         public static string connectionString = @"Data Source=(localdb)\ProjectModels;Initial Catalog = PayrollService; Integrated Security = True";
         public SqlConnection connection = new SqlConnection(connectionString);
-
         public void CheckConnection()    //UC1 Verifying the Connectivity status with the db.
         {
             try
@@ -33,17 +32,17 @@ namespace EmployeePayRoll_ADO.NET
         {
             try
             {
-                EmployeeModel employeeModel = new EmployeeModel();
                 using (this.connection)
                 {
-                    this.connection.Open();
+                    connection.Open();
                     string query = "select * from EmployeePayRoll";
-                    SqlCommand cmd = new SqlCommand(query, this.connection);
+                    SqlCommand cmd = new SqlCommand(query, connection);
                     SqlDataReader sqlDataReader = cmd.ExecuteReader();
                     if (sqlDataReader.HasRows)
                     {
                         while (sqlDataReader.Read())
                         {
+                            EmployeeModel employeeModel = new EmployeeModel();
                             employeeModel.Id = sqlDataReader.GetInt32(0);
                             employeeModel.Name = sqlDataReader.GetString(1);
                             employeeModel.Salary = sqlDataReader.GetDouble(2);
@@ -101,6 +100,35 @@ namespace EmployeePayRoll_ADO.NET
                     else
                     {
                         Console.WriteLine("Insert Query failed");
+                    }
+                    this.connection.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+        public void UpdateEmployee(EmployeeModel employee)  //UC4 Updation of existing employee record.
+        {
+            try
+            {
+                using(connection)
+                {
+                    connection.Open();
+                    SqlCommand command = new SqlCommand("spUpdateEmployeeDetails",connection);
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.Parameters.AddWithValue("@Name", employee.Name);
+                    command.Parameters.AddWithValue("@Id", employee.Id);
+                    command.Parameters.AddWithValue("@Salary", employee.Salary);
+                    int result = command.ExecuteNonQuery();
+                    if (result != 0)
+                    {
+                        Console.WriteLine("Employee updated succcessfully into table");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Failure! Unable to Update");
                     }
                     this.connection.Close();
                 }

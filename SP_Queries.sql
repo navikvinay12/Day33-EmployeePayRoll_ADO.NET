@@ -18,3 +18,14 @@ begin
 Insert into EmployeePayRoll  
 values ( @Name,@Salary,@StartDate,@Gender,@empPhone,@Address,@Department,@Deductions,@Taxable_Pay,@Income_Tax,@Net_Pay)
 end
+
+--UC4 Update Employee Details from the existing Records .
+Go
+CREATE PROCEDURE spUpdateEmployeeDetails
+@Name varchar (200),
+@Id int,
+@Salary float 
+As
+begin
+update EmployeePayRoll set salary=@Salary where Name=@Name and Id=@Id 
+end
