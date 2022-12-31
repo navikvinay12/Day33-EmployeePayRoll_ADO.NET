@@ -2,6 +2,7 @@
 using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -64,6 +65,43 @@ namespace EmployeePayRoll_ADO.NET
                         Console.WriteLine("No Data Found");
                     }
                     sqlDataReader.Close();
+                    this.connection.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+        public void AddEmployee(EmployeeModel employee)     //UC3 Insertion into Table .
+        {
+            try
+            {
+                using (this.connection)
+                {
+                    this.connection.Open();
+                    SqlCommand command = new SqlCommand("spAddEmployeeDetails", this.connection);
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.Parameters.AddWithValue("@Name", employee.Name);
+                    command.Parameters.AddWithValue("@Salary", employee.Salary);
+                    command.Parameters.AddWithValue("@StartDate", DateTime.Now);
+                    command.Parameters.AddWithValue("@Gender", employee.Gender);
+                    command.Parameters.AddWithValue("@empPhone", employee.empPhone);
+                    command.Parameters.AddWithValue("@Address", employee.Address);
+                    command.Parameters.AddWithValue("@Department", employee.Department);
+                    command.Parameters.AddWithValue("@Deductions", employee.Deductions);
+                    command.Parameters.AddWithValue("@Taxable_Pay", employee.Taxable_Pay);
+                    command.Parameters.AddWithValue("@Income_Tax", employee.Income_Tax);
+                    command.Parameters.AddWithValue("@Net_Pay", employee.Net_Pay);
+                    int count = command.ExecuteNonQuery();
+                    if (count != 0)
+                    {
+                        Console.WriteLine("Employee has been Added successfully into the table .");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Insert Query failed");
+                    }
                     this.connection.Close();
                 }
             }
