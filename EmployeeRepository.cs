@@ -13,15 +13,16 @@ namespace EmployeePayRoll_ADO.NET
 {
     public class EmployeeRepository
     {
+        //string tpVariable = @"Data Source=(localdb)\ProjectModels;Integrated Security=True";
         public static string connectionString = @"Data Source=(localdb)\ProjectModels;Initial Catalog = PayrollService; Integrated Security = True";
         public SqlConnection connection = new SqlConnection(connectionString);
         public void CheckConnection()    //UC1 Verifying the Connectivity status with the db.
         {
             try
             {
-                connection.Open();
+                this.connection.Open();
                 Console.WriteLine("Connection with database has been established.");
-                connection.Close();
+                this.connection.Close();
             }
             catch (Exception ex)
             {
@@ -34,7 +35,7 @@ namespace EmployeePayRoll_ADO.NET
             {
                 using (this.connection)
                 {
-                    connection.Open();
+                    this.connection.Open();
                     string query = "select * from EmployeePayRoll";
                     SqlCommand cmd = new SqlCommand(query, connection);
                     SqlDataReader sqlDataReader = cmd.ExecuteReader();
@@ -63,8 +64,8 @@ namespace EmployeePayRoll_ADO.NET
                     {
                         Console.WriteLine("No Data Found");
                     }
-                    sqlDataReader.Close();
-                    this.connection.Close();
+                    //sqlDataReader.Close();
+                    //this.connection.Close();
                 }
             }
             catch (Exception ex)
@@ -124,7 +125,7 @@ namespace EmployeePayRoll_ADO.NET
                     int result = command.ExecuteNonQuery();
                     if (result != 0)
                     {
-                        Console.WriteLine("Employee updated succcessfully into table");
+                        Console.WriteLine("Employee Details updated succcessfully into table");
                     }
                     else
                     {
@@ -138,6 +139,31 @@ namespace EmployeePayRoll_ADO.NET
                 Console.WriteLine(ex.Message);
             }
         }
+        public void DeleteEmployee(EmployeeModel employee)
+        {
+            try
+            {
+                connection.Open();
+                //connection = new SqlConnection(connectionString);
+                SqlCommand command = new SqlCommand("spDeleteEmployee", this.connection);
+                command.CommandType = CommandType.StoredProcedure;
+                command.Parameters.AddWithValue("@Name", employee.Name);
+                command.Parameters.AddWithValue("@Id", employee.Id);
+                int result = command.ExecuteNonQuery();
+                if (result != 0)
+                    Console.WriteLine("Employee deleted succcessfully from table");
+                else
+                    Console.WriteLine("Failure");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
         public void FetchEmployeesRecordBetweenGivenDates()  //UC4 Updation of existing employee record.
         {
             try
@@ -147,7 +173,7 @@ namespace EmployeePayRoll_ADO.NET
                     connection.Open();
                     string query = "select * from EmployeePayroll where StartDate between '2021-02-01' and GetDate()";
                     SqlCommand cmd = new SqlCommand(query, connection);
-                    SqlDataReader sqlDataReader = cmd.ExecuteReader(); ;
+                    SqlDataReader sqlDataReader = cmd.ExecuteReader(); 
                     if (sqlDataReader.HasRows)
                     {
                         while (sqlDataReader.Read())
@@ -179,6 +205,59 @@ namespace EmployeePayRoll_ADO.NET
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
+            }
+        }
+        //-------------------Day 34 TSQL (Foreign Key)---------------------------
+        public void InsertIntoTwoTablesWithoutTSQL(EmployeeModel employee)
+        {
+            try
+            {
+                this.connection.Open();
+                SqlCommand command = new SqlCommand("dbo.spAddEmployeeReturnId", connection);
+                command.CommandType = CommandType.StoredProcedure;
+                command.Parameters.AddWithValue("@Name", employee.Name);
+                command.Parameters.AddWithValue("@Address", employee.Address);
+                command.Parameters.Add("@Id", SqlDbType.Int).Direction = ParameterDirection.Output;////@Id is output parameter
+                int result = command.ExecuteNonQuery();
+                if (result != 0) { Console.WriteLine("Inserted into Employee table successfully"); }
+                var newId = Convert.ToInt32(command.Parameters["@Id"].Value);
+                string query = $"insert into Salary(EmpId,Salary) values({newId},{employee.Salary})";
+                SqlCommand comd = new SqlCommand(query, connection);
+                int res = comd.ExecuteNonQuery();
+                if (res != 0) { Console.WriteLine("Inserted into Salary table successfully"); }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+        //-----------------------------------------------
+        public void InsertIntoTwoTablesUsingTSQL(EmployeeModel employee)
+        {
+            SqlTransaction sqlTran = null;
+            try
+            {
+                this.connection.Open();
+                sqlTran = connection.BeginTransaction();//Start a local transaction.
+                SqlCommand command = new SqlCommand("dbo.spAddEmployeeReturnId", connection, sqlTran);
+                command.Transaction = sqlTran;
+                command.CommandType = CommandType.StoredProcedure;
+                command.Parameters.AddWithValue("@Name", employee.Name);
+                command.Parameters.AddWithValue("@Address", employee.Address);
+                command.Parameters.Add("@Id", SqlDbType.Int).Direction = ParameterDirection.Output;
+                int result = command.ExecuteNonQuery();
+                var newId = Convert.ToInt32(command.Parameters["@Id"].Value);
+                if (result != 0) { Console.WriteLine("Inserted into Employee table successfully"); }
+                string query = $"insert into Salary(EmpllllId,Salary) values({newId},{employee.Salary})";
+                SqlCommand comd = new SqlCommand(query, connection, sqlTran);
+                int res = comd.ExecuteNonQuery();
+                if (res != 0) { Console.WriteLine("Inserted into Salary table successfully."); }
+                sqlTran.Commit();
+            }
+            catch (Exception ex)
+            {
+                sqlTran.Rollback();
                 Console.WriteLine(ex.Message);
             }
         }
